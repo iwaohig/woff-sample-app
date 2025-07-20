@@ -23,8 +23,8 @@ LINE WORKS WOFF (Works Front-end Framework) の基本的な実装サンプルで
 
 ## WOFF設定
 
-- **WOFF ID**: `0O28XJpjf0AcsU7wXpLE3w`
-- **WOFF URL**: https://woff.worksmobile.com/woff/0O28XJpjf0AcsU7wXpLE3w
+- **WOFF ID**: `lV79qXZbsMXYVk4FImwN2g`
+- **WOFF URL**: https://woff.worksmobile.com/woff/lV79qXZbsMXYVk4FImwN2g
 
 ## ファイル構成
 

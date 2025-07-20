@@ -1,5 +1,5 @@
 // WOFF SDK設定
-const WOFF_ID = '0O28XJpjf0AcsU7wXpLE3w';
+const WOFF_ID = 'lV79qXZbsMXYVk4FImwN2g';
 
 // グローバル変数
 let isWoffInitialized = false;
