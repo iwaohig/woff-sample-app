@@ -16,6 +16,14 @@ async function initializeApp() {
         console.log('WOFF SDK初期化開始...');
         updateInitStatus('loading', 'WOFF SDKを初期化しています...');
         
+        // URLパラメータをチェック（OAuth認証後のリダイレクトかどうか）
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasOAuthParams = urlParams.has('code') && urlParams.has('state');
+        
+        if (hasOAuthParams) {
+            console.log('OAuth認証パラメータを検出しました');
+        }
+        
         // WOFF SDKがロードされるまで待機
         await waitForWoffSDK();
         
@@ -27,14 +35,40 @@ async function initializeApp() {
         isWoffInitialized = true;
         console.log('WOFF SDK初期化完了');
         
-        // 2. ユーザー情報取得
+        // 2. ログイン状態をチェック
+        const isInClient = woff.isInClient();
+        const isLoggedIn = woff.isLoggedIn();
+        
+        console.log('環境情報 - LINE WORKS内ブラウザ:', isInClient);
+        console.log('環境情報 - ログイン状態:', isLoggedIn);
+        
+        // 3. 外部ブラウザで未ログインの場合の処理
+        if (!isInClient && !isLoggedIn && !hasOAuthParams) {
+            console.log('外部ブラウザで未ログイン状態です。ログイン画面へリダイレクトします...');
+            updateInitStatus('loading', 'ログイン画面へリダイレクトしています...');
+            
+            // ログイン画面へリダイレクト
+            try {
+                await woff.login({
+                    redirectUri: window.location.origin + window.location.pathname
+                });
+                // この行には到達しない（ページがリダイレクトされるため）
+            } catch (loginError) {
+                console.error('ログインエラー:', loginError);
+                updateInitStatus('error', `❌ ログインエラー: ${loginError.message}`);
+                showError(`ログインに失敗しました: ${loginError.message}`);
+                return;
+            }
+        }
+        
+        // 4. ユーザー情報取得
         await loadUserProfile();
         
-        // 3. 初期化完了表示
+        // 5. 初期化完了表示
         updateInitStatus('success', '✅ WOFF SDK初期化完了');
         showUserInfo();
         
-        // 4. デバッグ情報表示
+        // 6. デバッグ情報表示
         showDebugInfo();
         
         console.log('アプリケーション初期化完了');
@@ -147,9 +181,19 @@ function showDebugInfo() {
     const debugInfoEl = document.getElementById('debugInfo');
     const currentUrlEl = document.getElementById('currentUrl');
     const userAgentEl = document.getElementById('userAgent');
+    const oauthParamsEl = document.getElementById('oauthParams');
     
     currentUrlEl.textContent = window.location.href;
     userAgentEl.textContent = navigator.userAgent;
+    
+    // OAuth認証パラメータの表示
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('code') && urlParams.has('state')) {
+        oauthParamsEl.textContent = 'あり (code, state)';
+        oauthParamsEl.style.color = '#28a745';
+    } else {
+        oauthParamsEl.textContent = 'なし';
+    }
     
     debugInfoEl.style.display = 'block';
 }
