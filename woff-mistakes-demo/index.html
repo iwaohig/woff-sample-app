@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WOFF実装ミスデモ - LINE WORKS外部ブラウザ対応の落とし穴</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>WOFF実装ミスデモ - 外部ブラウザ対応の落とし穴</h1>
+            <p>LINE WORKS WOFFアプリケーション開発でよくある間違いとその解決方法を実際のコードで確認できます。</p>
+        </div>
+        
+        <div class="explanation">
+            <h3>このデモについて</h3>
+            <p>LINE WORKSのWOFF（Works Front-end Framework）で外部ブラウザ対応を実装する際に、開発者がよく陥る落とし穴を実際に体験できるデモです。</p>
+            <p>各デモページでは、コンソール出力や動作を確認しながら、なぜその実装が動作しないのかを理解できます。</p>
+        </div>
+        
+        <div class="demo-grid">
+            <!-- 間違い1 -->
+            <div class="demo-card mistake">
+                <h3>❌ 間違い1: woff.login()後の処理</h3>
+                <p>woff.login()の後に処理を続けようとしてしまうパターン。Promiseのthenやcatchが実行されない理由を確認できます。</p>
+                <a href="mistake1.html">デモを見る →</a>
+            </div>
+            
+            <!-- 間違い2 -->
+            <div class="demo-card mistake">
+                <h3>❌ 間違い2: async/awaitの誤用</h3>
+                <p>async/awaitを使えば同期的に処理できると思い込んでしまうパターン。awaitの後のコードが実行されない理由を確認できます。</p>
+                <a href="mistake2.html">デモを見る →</a>
+            </div>
+            
+            <!-- 間違い3 -->
+            <div class="demo-card mistake">
+                <h3>❌ 間違い3: 重複ログイン処理</h3>
+                <p>OAuth認証後のリダイレクト時に、再度woff.login()を呼んでしまうパターン。URLパラメータの自動処理について理解できます。</p>
+                <a href="mistake3.html">デモを見る →</a>
+            </div>
+            
+            <!-- 正しい実装 -->
+            <div class="demo-card correct">
+                <h3>✅ 正しい実装例</h3>
+                <p>外部ブラウザでも正しく動作する実装パターン。URLパラメータの確認、適切な認証フローの実装方法を確認できます。</p>
+                <a href="correct.html">デモを見る →</a>
+            </div>
+        </div>
+        
+        <div class="explanation" style="margin-top: 40px;">
+            <h3>重要なポイント</h3>
+            <p><strong>1. woff.login()はリダイレクト</strong> - ページが別のURLに遷移するため、その後のコードは実行されません。</p>
+            <p><strong>2. 認証フローはステートレス</strong> - ページロードごとに状態を判断する必要があります。</p>
+            <p><strong>3. URLパラメータで判別</strong> - OAuth認証後はURLに<code>code</code>と<code>state</code>パラメータが付与されます。</p>
+            <p><strong>4. 自動認証処理</strong> - URLパラメータがある場合、woff.init()が自動的に認証を完了させます。</p>
+        </div>
+        
+        <div class="explanation" style="background-color: #e3f2fd; border-color: #2196f3;">
+            <h3>参考リンク</h3>
+            <p>
+                <a href="../index.html" target="_blank">実際に動作するWOFFサンプルアプリ</a><br>
+                <a href="../WOFF-Implementation-Guidelines.md" target="_blank">WOFF実装ガイドライン</a><br>
+                <a href="https://developers.worksmobile.com/jp/reference/woff" target="_blank">LINE WORKS公式ドキュメント</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

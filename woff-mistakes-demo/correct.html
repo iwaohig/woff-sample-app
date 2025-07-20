@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>正しい実装例: WOFF外部ブラウザ対応</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html">← 戻る</a>
+            <h1>正しい実装例: WOFF外部ブラウザ対応</h1>
+        </div>
+        
+        <div class="correct-box">
+            <h2>✅ 正しい実装パターン</h2>
+            <pre><code>// URLパラメータをチェック
+const urlParams = new URLSearchParams(window.location.search);
+const hasOAuthParams = urlParams.has('code') && urlParams.has('state');
+
+// WOFF SDK初期化
+await woff.init({ woffId: WOFF_ID });
+
+// 外部ブラウザで未ログインかつOAuth認証前の場合のみログイン
+if (!woff.isInClient() && !woff.isLoggedIn() && !hasOAuthParams) {
+    woff.login({
+        redirectUri: window.location.origin + window.location.pathname
+    });
+    return; // ここで処理を終了
+}
+
+// ログイン済みの場合の処理を継続</code></pre>
+        </div>
+        
+        <div class="explanation">
+            <h3>実装のポイント</h3>
+            <p><strong>1. URLパラメータの確認</strong> - OAuth認証後のリダイレクトかどうかを判断</p>
+            <p><strong>2. 3つの条件をチェック</strong> - 外部ブラウザ、未ログイン、OAuth前の全てを確認</p>
+            <p><strong>3. return文で処理を終了</strong> - woff.login()後のコードが実行されないことを明示</p>
+            <p><strong>4. 認証後は自動処理</strong> - URLパラメータがあればwoff.init()が自動認証</p>
+        </div>
+        
+        <div class="demo-area">
+            <h3>デモ</h3>
+            <p>実際に動作する正しい実装を確認できます</p>
+            
+            <div class="demo-grid" style="margin: 20px 0;">
+                <button id="checkStatusBtn" class="btn">現在の状態を確認</button>
+                <button id="loginBtn" class="btn">ログイン（必要時のみ）</button>
+                <button id="logoutBtn" class="btn btn-secondary">ログアウト（テスト用）</button>
+            </div>
+            
+            <div id="status" class="status-box"></div>
+            <div id="urlParams" class="url-params"></div>
+            <div id="userInfo" class="status-box" style="display: none;"></div>
+            <div id="console" class="console"></div>
+        </div>
+        
+        <div class="explanation" style="background-color: #e8f5e9;">
+            <h3>認証フローの流れ</h3>
+            <ol>
+                <li><strong>初回アクセス</strong> - URLパラメータなし、未ログイン → woff.login()でリダイレクト</li>
+                <li><strong>LINE WORKS認証画面</strong> - ユーザーがログイン情報を入力</li>
+                <li><strong>認証後リダイレクト</strong> - URLにcode/stateパラメータ付きで戻ってくる</li>
+                <li><strong>自動認証完了</strong> - woff.init()がパラメータを検出して認証完了</li>
+                <li><strong>アプリ利用開始</strong> - ユーザー情報取得、機能利用可能</li>
+            </ol>
+        </div>
+    </div>
+    
+    <script charset="utf-8" src="https://static.worksmobile.net/static/wm/woff/edge/3.7.1/sdk.js"></script>
+    <script>
+        const WOFF_ID = '0O28XJpjf0AcsU7wXpLE3w'; // 実際のWOFF ID
+        const consoleDiv = document.getElementById('console');
+        const statusDiv = document.getElementById('status');
+        const urlParamsDiv = document.getElementById('urlParams');
+        const userInfoDiv = document.getElementById('userInfo');
+        
+        // コンソール出力を画面に表示
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            consoleDiv.appendChild(logEntry);
+            console.log(message);
+        }
+        
+        // URLパラメータを表示
+        function displayUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasCode = urlParams.has('code');
+            const hasState = urlParams.has('state');
+            
+            if (hasCode || hasState) {
+                urlParamsDiv.innerHTML = `
+                    <div class="param-box">
+                        <strong>OAuth認証パラメータ検出</strong><br>
+                        code: ${hasCode ? '✅ あり' : '❌ なし'}<br>
+                        state: ${hasState ? '✅ あり' : '❌ なし'}<br>
+                        <small>※ これらのパラメータはwoff.init()で自動処理されます</small>
+                    </div>
+                `;
+            } else {
+                urlParamsDiv.innerHTML = '<div class="param-box">URLパラメータなし（初回アクセスまたは認証済み）</div>';
+            }
+            
+            return { hasCode, hasState };
+        }
+        
+        // 状態表示を更新
+        function updateStatus(message, type = 'info') {
+            let className = '';
+            if (type === 'success') className = 'success';
+            else if (type === 'warning') className = 'warning';
+            else if (type === 'error') className = 'error';
+            
+            statusDiv.innerHTML = `<span class="${className}">${message}</span>`;
+        }
+        
+        // ユーザー情報を表示
+        function displayUserInfo(profile) {
+            userInfoDiv.style.display = 'block';
+            userInfoDiv.innerHTML = `
+                <strong>ユーザー情報</strong><br>
+                名前: ${profile.displayName}<br>
+                ID: ${profile.userId}<br>
+                <small>※ プロフィール情報が正常に取得できました</small>
+            `;
+        }
+        
+        // 正しい初期化実装
+        async function initializeWOFF() {
+            try {
+                log('=== 正しいWOFF初期化処理開始 ===', 'info');
+                
+                // 1. URLパラメータをチェック
+                const { hasCode, hasState } = displayUrlParams();
+                const hasOAuthParams = hasCode && hasState;
+                
+                if (hasOAuthParams) {
+                    log('OAuth認証パラメータを検出しました', 'success');
+                    log('woff.init()が自動的に認証を処理します', 'info');
+                } else {
+                    log('OAuth認証パラメータはありません', 'info');
+                }
+                
+                // 2. WOFF SDK初期化
+                log('woff.init()を実行します...');
+                await woff.init({ woffId: WOFF_ID });
+                log('WOFF SDK初期化完了', 'success');
+                
+                // 3. 環境とログイン状態を確認
+                const isInClient = woff.isInClient();
+                const isLoggedIn = woff.isLoggedIn();
+                
+                log(`環境: ${isInClient ? 'LINE WORKS内ブラウザ' : '外部ブラウザ'}`);
+                log(`ログイン状態: ${isLoggedIn ? 'ログイン済み' : '未ログイン'}`);
+                
+                // 4. 外部ブラウザで未ログインかつOAuth認証前の場合のみログイン
+                if (!isInClient && !isLoggedIn && !hasOAuthParams) {
+                    log('外部ブラウザで未ログイン、かつOAuth前です', 'warning');
+                    log('ログイン画面へリダイレクトします...', 'warning');
+                    updateStatus('ログイン画面へリダイレクトします...', 'warning');
+                    
+                    // 3秒後にリダイレクト（デモのため遅延）
+                    setTimeout(() => {
+                        woff.login({
+                            redirectUri: window.location.origin + window.location.pathname
+                        });
+                    }, 3000);
+                    
+                    log('⚠️ ここで処理を終了します（return）', 'warning');
+                    return; // 重要: ここで処理を終了
+                }
+                
+                // 5. ログイン済みの場合の処理
+                log('認証済みです。アプリケーションを開始します', 'success');
+                updateStatus('✅ 認証完了 - アプリケーション利用可能', 'success');
+                
+                if (isLoggedIn) {
+                    try {
+                        const profile = await woff.getProfile();
+                        log(`ユーザー情報取得成功: ${profile.displayName}`, 'success');
+                        displayUserInfo(profile);
+                    } catch (error) {
+                        log('ユーザー情報取得エラー: ' + error.message, 'error');
+                    }
+                } else {
+                    log('外部ブラウザでゲストとして動作中', 'info');
+                    updateStatus('ゲストモードで動作中', 'info');
+                }
+                
+                log('=== 初期化処理完了 ===', 'success');
+                
+            } catch (error) {
+                log('WOFF初期化エラー: ' + error.message, 'error');
+                updateStatus('❌ 初期化エラー: ' + error.message, 'error');
+            }
+        }
+        
+        // 現在の状態を確認
+        document.getElementById('checkStatusBtn').addEventListener('click', async () => {
+            log('--- 現在の状態を確認 ---');
+            
+            try {
+                const isInClient = woff.isInClient();
+                const isLoggedIn = woff.isLoggedIn();
+                const version = woff.getVersion();
+                
+                log(`WOFF SDKバージョン: ${version}`);
+                log(`環境: ${isInClient ? 'LINE WORKS内ブラウザ' : '外部ブラウザ'}`);
+                log(`ログイン状態: ${isLoggedIn ? 'ログイン済み' : '未ログイン'}`);
+                
+                if (isLoggedIn) {
+                    const profile = await woff.getProfile();
+                    log(`ユーザー: ${profile.displayName} (${profile.userId})`);
+                }
+            } catch (error) {
+                log('状態確認エラー: ' + error.message, 'error');
+            }
+        });
+        
+        // ログインボタン（必要時のみ）
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            log('手動ログインボタンがクリックされました');
+            
+            if (woff.isLoggedIn()) {
+                log('既にログイン済みです', 'warning');
+                updateStatus('既にログイン済みです', 'warning');
+                return;
+            }
+            
+            log('ログイン画面へリダイレクトします...');
+            woff.login({
+                redirectUri: window.location.origin + window.location.pathname
+            });
+        });
+        
+        // ログアウトボタン（テスト用）
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            log('ログアウト機能は実装されていません', 'warning');
+            log('ブラウザのCookieをクリアしてください', 'info');
+            updateStatus('ログアウトするにはブラウザのCookieをクリアしてください', 'warning');
+        });
+        
+        // WOFF SDKの読み込み待機
+        async function waitForWoffSDK() {
+            return new Promise((resolve) => {
+                const checkInterval = setInterval(() => {
+                    if (typeof woff !== 'undefined') {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 100);
+                
+                setTimeout(() => {
+                    clearInterval(checkInterval);
+                    log('WOFF SDKの読み込みがタイムアウトしました', 'error');
+                }, 10000);
+            });
+        }
+        
+        // ページ読み込み時に実行
+        window.addEventListener('DOMContentLoaded', async () => {
+            log('ページ読み込み完了、WOFF SDKの読み込みを待機中...');
+            await waitForWoffSDK();
+            log('WOFF SDKの読み込み完了');
+            initializeWOFF();
+        });
+    </script>
+</body>
+</html>

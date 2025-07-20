@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>間違い1: woff.login()後に処理を続けようとする</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html">← 戻る</a>
+            <h1>間違い1: woff.login()後に処理を続けようとする</h1>
+        </div>
+        
+        <div class="mistake-box">
+            <h2>❌ このコードは動きません！</h2>
+            <pre><code>woff.login().then(() => {
+    console.log("ここには絶対に到達しない");
+    authStore.isLoggedIn = true; // 実行されない
+});</code></pre>
+        </div>
+        
+        <div class="explanation">
+            <h3>問題点</h3>
+            <p>woff.login()はページをLINE WORKSの認証画面にリダイレクトします。<br>
+            そのため、thenの中の処理は実行されません。</p>
+        </div>
+        
+        <div class="demo-area">
+            <h3>デモ</h3>
+            <p>ログインボタンをクリックして動作を確認してください</p>
+            <button id="loginBtn" class="btn">ログイン（間違った実装）</button>
+            <div id="status" class="status-box"></div>
+            <div id="console" class="console"></div>
+        </div>
+    </div>
+    
+    <script charset="utf-8" src="https://static.worksmobile.net/static/wm/woff/edge/3.7.1/sdk.js"></script>
+    <script>
+        const WOFF_ID = 'uHGUSP7NPtiUC54I6nTLaw'; // 実際のWOFF ID
+        const consoleDiv = document.getElementById('console');
+        const statusDiv = document.getElementById('status');
+        
+        // コンソール出力を画面に表示
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            consoleDiv.appendChild(logEntry);
+            console.log(message);
+        }
+        
+        // 初期化
+        async function init() {
+            try {
+                log('WOFF SDK初期化中...');
+                await woff.init({ woffId: WOFF_ID });
+                log('WOFF SDK初期化完了', 'success');
+                
+                if (woff.isLoggedIn()) {
+                    statusDiv.innerHTML = '<span class="success">✅ ログイン済み</span>';
+                } else {
+                    statusDiv.innerHTML = '<span class="warning">⚠️ 未ログイン</span>';
+                }
+            } catch (error) {
+                log(`初期化エラー: ${error.message}`, 'error');
+            }
+        }
+        
+        // 間違った実装
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            log('ログインボタンがクリックされました');
+            log('woff.login()を実行します...');
+            
+            // ❌ この実装は間違い！
+            woff.login({
+                redirectUri: window.location.href
+            }).then(() => {
+                // このコードは実行されません！
+                log('ログイン成功！', 'success');
+                log('認証情報を保存します...');
+                statusDiv.innerHTML = '<span class="success">✅ ログイン完了</span>';
+            }).catch((error) => {
+                // エラーハンドリングも動作しません！
+                log(`ログインエラー: ${error.message}`, 'error');
+            });
+            
+            // ページがリダイレクトされるため、この行も実行されない可能性があります
+            log('woff.login()の後の処理...（実際には実行されない）', 'warning');
+        });
+        
+        // ページ読み込み時に初期化
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

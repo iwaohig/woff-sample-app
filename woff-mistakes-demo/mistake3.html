@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>間違い3: 認証後も再度ログイン処理を呼ぼうとする</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html">← 戻る</a>
+            <h1>間違い3: 認証後も再度ログイン処理を呼ぼうとする</h1>
+        </div>
+        
+        <div class="mistake-box">
+            <h2>❌ この実装は無駄です！</h2>
+            <pre><code>// OAuth認証後のリダイレクト時
+woff.init({ woffId }).then(() => {
+    if (!woff.isLoggedIn()) {
+        woff.login(); // 不要！URLパラメータがあれば自動認証される
+    }
+});</code></pre>
+        </div>
+        
+        <div class="explanation">
+            <h3>問題点</h3>
+            <p>OAuth認証後、URLにcode/stateパラメータが含まれている場合、<br>
+            woff.init()が自動的に認証を完了させます。<br>
+            再度woff.login()を呼ぶ必要はありません。</p>
+        </div>
+        
+        <div class="demo-area">
+            <h3>デモ</h3>
+            <p>URLパラメータの状態と認証フローを確認できます</p>
+            <button id="loginBtn" class="btn">初回ログイン</button>
+            <button id="simulateRedirect" class="btn btn-secondary">OAuth後のリダイレクトをシミュレート</button>
+            <div id="status" class="status-box"></div>
+            <div id="urlParams" class="url-params"></div>
+            <div id="console" class="console"></div>
+        </div>
+    </div>
+    
+    <script charset="utf-8" src="https://static.worksmobile.net/static/wm/woff/edge/3.7.1/sdk.js"></script>
+    <script>
+        const WOFF_ID = 'ghR9KUSGdTvn4MCej4cJ8Q'; // 実際のWOFF ID
+        const consoleDiv = document.getElementById('console');
+        const statusDiv = document.getElementById('status');
+        const urlParamsDiv = document.getElementById('urlParams');
+        
+        // コンソール出力を画面に表示
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            consoleDiv.appendChild(logEntry);
+            console.log(message);
+        }
+        
+        // URLパラメータを表示
+        function displayUrlParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const hasCode = urlParams.has('code');
+            const hasState = urlParams.has('state');
+            
+            if (hasCode || hasState) {
+                urlParamsDiv.innerHTML = `
+                    <div class="param-box">
+                        <strong>URLパラメータ検出</strong><br>
+                        code: ${hasCode ? '✅ あり' : '❌ なし'}<br>
+                        state: ${hasState ? '✅ あり' : '❌ なし'}
+                    </div>
+                `;
+            } else {
+                urlParamsDiv.innerHTML = '<div class="param-box">URLパラメータなし</div>';
+            }
+            
+            return { hasCode, hasState };
+        }
+        
+        // 間違った実装の例
+        async function initWithMistake() {
+            try {
+                const { hasCode, hasState } = displayUrlParams();
+                const hasOAuthParams = hasCode && hasState;
+                
+                log('WOFF SDK初期化中...');
+                await woff.init({ woffId: WOFF_ID });
+                log('WOFF SDK初期化完了', 'success');
+                
+                const isLoggedIn = woff.isLoggedIn();
+                log(`ログイン状態: ${isLoggedIn ? 'ログイン済み' : '未ログイン'}`);
+                
+                // ❌ 間違った実装
+                if (!isLoggedIn) {
+                    log('未ログインなので、woff.login()を呼び出します...', 'warning');
+                    
+                    // OAuth認証パラメータがある場合でも再度ログインしようとする
+                    if (hasOAuthParams) {
+                        log('⚠️ URLにOAuthパラメータがあるのに再度ログインしようとしています！', 'error');
+                        log('これは不要な処理です。woff.init()が自動的に認証を完了させます。', 'error');
+                    }
+                    
+                    // 実際にはこの処理は不要
+                    woff.login({
+                        redirectUri: window.location.origin + window.location.pathname
+                    });
+                } else {
+                    statusDiv.innerHTML = '<span class="success">✅ ログイン済み</span>';
+                    const profile = await woff.getProfile();
+                    log(`ユーザー: ${profile.displayName}`, 'success');
+                }
+                
+            } catch (error) {
+                log(`エラー: ${error.message}`, 'error');
+            }
+        }
+        
+        // 初回ログイン
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            log('初回ログインを開始します');
+            try {
+                await woff.init({ woffId: WOFF_ID });
+                woff.login({
+                    redirectUri: window.location.origin + window.location.pathname
+                });
+            } catch (error) {
+                log(`ログインエラー: ${error.message}`, 'error');
+            }
+        });
+        
+        // OAuth後のリダイレクトをシミュレート
+        document.getElementById('simulateRedirect').addEventListener('click', () => {
+            const mockCode = 'mock_auth_code_12345';
+            const mockState = 'mock_state_67890';
+            const newUrl = `${window.location.origin}${window.location.pathname}?code=${mockCode}&state=${mockState}`;
+            window.location.href = newUrl;
+        });
+        
+        // ページ読み込み時に初期化（間違った実装）
+        window.addEventListener('DOMContentLoaded', initWithMistake);
+    </script>
+</body>
+</html>
