@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WOFF Sample App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .init-status {
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .init-success {
+            background-color: #d1edff;
+            border: 2px solid #0066cc;
+            color: #004080;
+        }
+        .init-loading {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+        }
+        .init-error {
+            background-color: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+        }
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <h1 class="text-center mb-4">WOFF Sample Application</h1>
+                
+                <!-- 初期化状態表示 -->
+                <div id="initStatus" class="init-status init-loading">
+                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    WOFF SDKを初期化しています...
+                </div>
+                
+                <!-- ユーザー情報表示 -->
+                <div id="userInfo" class="card" style="display: none;">
+                    <div class="card-header">
+                        <h5 class="mb-0">ユーザー情報</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>表示名:</strong> <span id="displayName">-</span></p>
+                        <p><strong>LINE WORKS内ブラウザ:</strong> <span id="isInClient">-</span></p>
+                        <p><strong>ログイン状態:</strong> <span id="isLoggedIn">-</span></p>
+                        <p><strong>WOFF ID:</strong> <span id="woffId">-</span></p>
+                    </div>
+                </div>
+                
+                <!-- エラー情報表示 -->
+                <div id="errorInfo" class="alert alert-danger" style="display: none;" role="alert">
+                    <h6 class="alert-heading">エラーが発生しました</h6>
+                    <p id="errorMessage" class="mb-0"></p>
+                </div>
+                
+                <!-- デバッグ情報 -->
+                <div class="card mt-3" style="display: none;" id="debugInfo">
+                    <div class="card-header">
+                        <h6 class="mb-0">デバッグ情報</h6>
+                    </div>
+                    <div class="card-body">
+                        <small class="text-muted">
+                            <div>URL: <span id="currentUrl"></span></div>
+                            <div>User Agent: <span id="userAgent"></span></div>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WOFF SDK - 必ずbodyの最後、他のscriptより前に配置 -->
+    <script charset="utf-8" src="https://static.worksmobile.net/static/wm/woff/edge/3.7.1/sdk.js"></script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="script.js"></script>
+</body>
+</html>
